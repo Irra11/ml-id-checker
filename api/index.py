@@ -35,28 +35,26 @@ def check_ff_nickname():
         return jsonify({"status": False, "message": "Missing ID"}), 400
 
     try:
-        # ✅ NEW WORKING API
-        url = f"https://api.xyroinee.xyz/api/ff-nickname?id={user_id}"
+        url = f"https://ff.garena.com/api/antihack/check_banned?lang=en&uid={user_id}"
 
-        response = requests.get(url, timeout=10)
-        data = response.json()
+        res = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0"
+        }, timeout=10)
 
-        # Debug safe parsing
-        nickname = None
+        data = res.json()
 
-        if "result" in data:
-            nickname = data["result"].get("nickname")
-
-        if nickname:
+        # ⚠️ This API doesn't return nickname, but confirms valid UID
+        if "status" in data:
             return jsonify({
                 "status": True,
-                "nickname": nickname
+                "uid": user_id,
+                "message": "UID is valid (Garena check)"
             })
 
         return jsonify({
             "status": False,
-            "message": "Player not found"
-        }), 404
+            "message": "Invalid UID"
+        })
 
     except Exception as e:
         return jsonify({
