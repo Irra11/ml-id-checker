@@ -35,17 +35,10 @@ def check_ff_nickname():
         return jsonify({"status": False, "message": "Missing ID"}), 400
 
     try:
+        # 1️⃣ Try nickname API
         url = "https://api.isan.eu.org/nickname/ff"
-        params = {"id": user_id}
-
-        res = requests.get(url, params=params, timeout=10, headers={
-            "User-Agent": "Mozilla/5.0"
-        })
-
+        res = requests.get(url, params={"id": user_id}, timeout=10)
         data = res.json()
-
-        # DEBUG (optional)
-        # print(data)
 
         nickname = (
             data.get("nickname") or
@@ -59,13 +52,23 @@ def check_ff_nickname():
                 "nickname": nickname
             })
 
-        return jsonify({
-            "status": False,
-            "message": "Nickname not found (API unstable)"
-        }), 404
+        # 2️⃣ Fallback (UID valid check)
+        check = requests.get(
+            f"https://ff.garena.com/api/antihack/check_banned?lang=en&uid={user_id}",
+            timeout=10
+        ).json()
 
-    except Exception as e:
+        if "status" in check:
+            return jsonify({
+                "status": True,
+                "nickname": "UID Valid",
+                "fallback": True
+            })
+
+        return jsonify({"status": False})
+
+    except:
         return jsonify({
             "status": False,
-            "error": "FF API failed"
+            "message": "FF API failed"
         }), 500
