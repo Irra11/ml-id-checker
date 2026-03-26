@@ -27,8 +27,6 @@ def check_ml_nickname():
         return jsonify({"status": False, "error": str(e)}), 500
 
 # No app.run() needed for Vercel production
-import time
-
 @app.route("/ff", methods=["GET"])
 def check_ff_nickname():
     user_id = request.args.get("id")
@@ -36,19 +34,21 @@ def check_ff_nickname():
     if not user_id:
         return jsonify({"status": False}), 400
 
-    try:
-        for i in range(3):  # retry 3 times
-            res = requests.get(
-                "https://api.isan.eu.org/nickname/ff",
-                params={"id": user_id},
-                timeout=10
-            )
+    apis = [
+        f"https://api.isan.eu.org/nickname/ff?id={user_id}",
+        f"https://hadi-api.xyz/api/nickname/ff?id={user_id}",
+        f"https://api.xyroinee.xyz/api/ff-nickname?id={user_id}"
+    ]
 
+    for api in apis:
+        try:
+            res = requests.get(api, timeout=8)
             data = res.json()
 
             nickname = (
                 data.get("nickname") or
                 data.get("name") or
+                data.get("result") or
                 (data.get("data") or {}).get("nickname")
             )
 
@@ -57,13 +57,10 @@ def check_ff_nickname():
                     "status": True,
                     "nickname": nickname
                 })
+        except:
+            continue
 
-            time.sleep(1)  # wait before retry
-
-        return jsonify({
-            "status": False,
-            "message": "Nickname not found (retry failed)"
-        })
-
-    except:
-        return jsonify({"status": False}), 500
+    return jsonify({
+        "status": False,
+        "message": "All APIs failed"
+    })
