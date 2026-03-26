@@ -27,27 +27,27 @@ def check_ml_nickname():
         return jsonify({"status": False, "error": str(e)}), 500
 
 # No app.run() needed for Vercel production
-
-# NEW: Free Fire Check
 @app.route("/ff", methods=["GET"])
 def check_ff_nickname():
     user_id = request.args.get("id")
     if not user_id:
-        return jsonify({"status": False, "message": "Missing Game ID"}), 400
+        return jsonify({"status": False, "message": "Missing ID"}), 400
 
     try:
-        # Using the Free Fire endpoint from the same provider
+        # Verified API endpoint for Free Fire
         url = "https://api.isan.eu.org/nickname/ff"
         params = {"id": user_id}
+        
         response = requests.get(url, params=params, timeout=10)
         data = response.json()
         
-        nickname = data.get("nickname") or data.get("name")
+        # The API usually returns the name in a 'name' or 'nickname' field
+        nickname = data.get("name") or data.get("nickname")
+        
         if nickname:
             return jsonify({"status": True, "nickname": nickname})
-        return jsonify({"status": False, "message": "User not found"}), 404
+        else:
+            return jsonify({"status": False, "message": "Player ID not found"}), 404
+            
     except Exception as e:
-        return jsonify({"status": False, "error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(port=5000)
+        return jsonify({"status": False, "message": "Check service failed"}), 500
